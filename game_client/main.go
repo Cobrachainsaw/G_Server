@@ -5,15 +5,11 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/Cobrachainsaw/G_Server/types"
 	"github.com/gorilla/websocket"
 )
 
 const wsServerEndpoint = "ws://localhost:40000/ws"
-
-type Login struct {
-	ClientID int    `json:"clientID"`
-	Username string `json:"username"`
-}
 
 type GameClient struct {
 	conn     *websocket.Conn
@@ -23,6 +19,7 @@ type GameClient struct {
 
 func newGameClient(conn *websocket.Conn, username string) *GameClient {
 	return &GameClient{
+		conn:     conn,
 		clientID: rand.Intn(math.MaxInt),
 		username: username,
 	}
@@ -45,7 +42,7 @@ func main() {
 }
 
 func (c *GameClient) login() error {
-	return c.conn.WriteJSON(Login{
+	return c.conn.WriteJSON(types.Login{
 		ClientID: c.clientID,
 		Username: c.username,
 	})

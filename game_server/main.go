@@ -3,13 +3,37 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
+	"math/rand"
 	"net/http"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
 )
 
+type PlayerSession struct {
+	sessionID int
+	clientID  int
+	username  string
+	inLobby   bool
+	conn      *websocket.Conn
+}
+
+func newPlayerSession(sid int, conn *websocket.Conn) actor.Producer {
+	return func() actor.Receiver {
+		return &PlayerSession{
+			sessionID: sid,
+			conn:      conn,
+		}
+	}
+}
+
+func (s *PlayerSession) Receive(c *actor.Context) {
+
+}
+
 type GameServer struct {
+	ctx *actor.Context
 }
 
 func newGameServer() actor.Receiver {
@@ -17,6 +41,10 @@ func newGameServer() actor.Receiver {
 }
 
 func (s *GameServer) Receive(c *actor.Context) {
+	if s.ctx == nil {
+		s.ctx = c // Assign the actor context when it first starts
+	}
+
 	switch msg := c.Message().(type) {
 	case actor.Started:
 		s.startHTTP()
@@ -33,13 +61,26 @@ func (s *GameServer) startHTTP() {
 }
 
 func (s *GameServer) handleWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Upgrade(w, r, nil, 1024, 1024)
+	if s.ctx == nil {
+		log.Println("GameServer context is nil!")
+		return
+	}
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println("ws upgrade error:", err)
 		return
 	}
 	fmt.Println("New Client trying to connect")
-	fmt.Println(conn)
+	sid := rand.Intn(math.MaxInt)
+	pid := s.ctx.SpawnChild(newPlayerSession(sid, conn), fmt.Sprintf("session_%d", sid))
+	fmt.Printf("Client with sid: %d and pid: %s just connected\n", sid, pid)
 }
 
 func main() {
