@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"net/http"
 
+	"github.com/Cobrachainsaw/G_Server/types"
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
 )
@@ -29,7 +31,32 @@ func newPlayerSession(sid int, conn *websocket.Conn) actor.Producer {
 }
 
 func (s *PlayerSession) Receive(c *actor.Context) {
+	switch c.Message().(type) {
+	case actor.Started:
+		s.readLoop()
+	}
+}
 
+func (s *PlayerSession) readLoop() {
+	var msg types.WSMessage
+	for {
+		if err := s.conn.ReadJSON(&msg); err != nil {
+			fmt.Println("read error", err)
+			return
+		}
+		go s.handleMessage(msg)
+	}
+}
+
+func (s *PlayerSession) handleMessage(msg types.WSMessage) {
+	switch msg.Type {
+	case "Login":
+		var login types.Login
+		if err := json.Unmarshal(msg.Data, &login); err != nil {
+			panic(err)
+		}
+		fmt.Println(login)
+	}
 }
 
 type GameServer struct {
