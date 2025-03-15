@@ -13,11 +13,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type PlayerState struct {
+	Position types.Position
+	Health   int
+	Velocity int
+}
+
 type PlayerSession struct {
 	sessionID int
 	clientID  int
 	username  string
-	inLobby   bool
 	conn      *websocket.Conn
 }
 
@@ -34,6 +39,7 @@ func (s *PlayerSession) Receive(c *actor.Context) {
 	switch c.Message().(type) {
 	case actor.Started:
 		s.readLoop()
+		// statePID = c.SpawnChild(newPlayerState, "playerState")
 	}
 }
 
