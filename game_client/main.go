@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/Cobrachainsaw/G_Server/types"
 	"github.com/gorilla/websocket"
@@ -39,6 +40,27 @@ func main() {
 	c := newGameClient(conn, "James")
 	if err := c.login(); err != nil {
 		log.Fatal(err)
+	}
+
+	for {
+		x := rand.Intn(1000)
+		y := rand.Intn(1000)
+		state := types.PlayerState{
+			Health:   100,
+			Position: types.Position{X: x, Y: y},
+		}
+		b, err := json.Marshal(state)
+		if err != nil {
+			log.Fatal(err)
+		}
+		msg := types.WSMessage{
+			Type: "playerState",
+			Data: b,
+		}
+		if err := conn.WriteJSON(msg); err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(time.Millisecond * 100)
 	}
 }
 

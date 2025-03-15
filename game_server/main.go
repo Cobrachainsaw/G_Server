@@ -55,7 +55,14 @@ func (s *PlayerSession) handleMessage(msg types.WSMessage) {
 		if err := json.Unmarshal(msg.Data, &login); err != nil {
 			panic(err)
 		}
-		fmt.Println(login)
+		s.clientID = login.ClientID
+		s.username = login.Username
+	case "playerState":
+		var ps types.PlayerState
+		if err := json.Unmarshal(msg.Data, &ps); err != nil {
+			panic(err)
+		}
+		fmt.Println(ps)
 	}
 }
 
